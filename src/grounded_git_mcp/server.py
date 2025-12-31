@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
+from grounded_git_mcp.resources import diff_range, repo_tree
+from grounded_git_mcp.resources.file_at_ref import read_file_at_ref
 from grounded_git_mcp.tools import (
     blame,
     detect_conflicts,
@@ -12,6 +14,7 @@ from grounded_git_mcp.tools import (
     show_commit,
     status_porcelain,
 )
+from grounded_git_mcp.tools.approval_flow import execute_confirmed, propose_git_command
 
 mcp = FastMCP("grounded-git-mcp")
 
@@ -54,6 +57,41 @@ def blame_tool(file_path: str, root: str = ".", start_line: int = 1, end_line: i
 @mcp.tool()
 def detect_conflicts_tool(root: str = ".") -> dict:
     return detect_conflicts(root=root)
+
+@mcp.tool()
+def repo_tree_resource(root: str = ".", ref: str = "HEAD") -> dict:
+    return repo_tree(root=root, ref=ref)
+
+
+@mcp.tool()
+def read_file_resource(root: str = ".", ref: str = "HEAD", path: str = "") -> dict:
+    return read_file_at_ref(root=root, ref=ref, path=path)
+
+
+@mcp.tool()
+def diff_range_resource(
+    root: str = ".",
+    base: str = "HEAD~1",
+    head: str = "HEAD",
+    triple_dot: bool = False,
+    pathspec: list[str] | None = None,
+) -> dict:
+    return diff_range(root=root, base=base, head=head, triple_dot=triple_dot, pathspec=pathspec)
+
+@mcp.tool()
+def propose_git_command_tool(
+    root: str = ".",
+    args: list[str] = [],
+    expected_branch: str | None = None,
+    require_clean: bool = False,
+) -> dict:
+    return propose_git_command(root=root, args=args, expected_branch=expected_branch, require_clean=require_clean)
+
+
+@mcp.tool()
+def execute_confirmed_tool(root: str = ".", confirmation_id: str = "", user_confirmation: str = "") -> dict:
+    return execute_confirmed(root=root, confirmation_id=confirmation_id, user_confirmation=user_confirmation)
+
 
 
 def main() -> None:

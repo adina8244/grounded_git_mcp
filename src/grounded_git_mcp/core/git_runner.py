@@ -39,6 +39,12 @@ def _kill_process_group_posix(p: subprocess.Popen) -> None:
             pass
 
 
+def require_ok(res: GitRunResult, context: str) -> GitRunResult:
+    if res.exit_code != 0:
+        raise GitExecutionError(f"{context} failed: {res.stderr.strip()}")
+    return res
+
+
 @dataclass(frozen=True)
 class GitRunnerConfig:
     """
@@ -63,6 +69,8 @@ class GitRunnerConfig:
         "tag",
         "grep",
         "blame",
+        "ls-tree",
+         "merge-base",
     )
 
 class SafeGitRunner:
@@ -119,13 +127,43 @@ class SafeGitRunner:
         if not args_list:
             raise GitPolicyError("Empty git args are not allowed.")
 
-        if read_only:
-            subcmd = args_list[0]
-            if subcmd not in self.config.read_only_allowlist:
-                raise GitPolicyError(
-                    f"Blocked git subcommand in read-only mode: '{subcmd}'. "
-                    f"Allowed: {', '.join(self.config.read_only_allowlist)}"
-                )
+        if not read_only:
+            return
+        args = [a.strip() for a in args_list]
+        lowered = [a.lower() for a in args]
+        subcmd = lowered[0]
+        if subcmd not in self.config.read_only_allowlist:
+            raise GitPolicyError(
+                f"Blocked git subcommand in read-only mode: '{subcmd}'. "
+                f"Allowed: {', '.join(self.config.read_only_allowlist)}"
+            )
+
+        dangerous_flags = {
+            "--global", "--system",  
+            "--unset", "--unset-all", "--add", "--replace-all",
+            "--delete",              
+            "--force", "-f",         
+        }
+
+        if any(f in lowered for f in dangerous_flags):
+            raise GitPolicyError(f"Blocked potentially mutating git flags in read-only mode: {args_list}")
+
+        if subcmd == "branch" and any(t in lowered for t in {"-d", "-D".lower(), "--delete"}):
+            raise GitPolicyError("Blocked branch deletion in read-only mode.")
+
+        if subcmd == "tag" and any(t in lowered for t in {"-d", "--delete"}):
+            raise GitPolicyError("Blocked tag deletion in read-only mode.")
+
+        if subcmd == "remote" and len(lowered) >= 2:
+            op = lowered[1]
+            if op in {"set-url", "add", "remove", "rename"}:
+                raise GitPolicyError("Blocked remote mutation in read-only mode.")
+
+       
+        if subcmd == "config":
+            if len(lowered) >= 3:
+                raise GitPolicyError("Blocked config write in read-only mode.")
+
 
 
     def _build_env(self, extra_env: dict[str, str] | None) -> dict[str, str]:
@@ -133,14 +171,14 @@ class SafeGitRunner:
         Build a controlled environment that prevents interactive hangs.
         """
         merged_env = dict(os.environ)
-
-        # Prevent terminal prompts / credential UI / pager hangs
         merged_env.update(
             {
                 "GIT_TERMINAL_PROMPT": "0",
                 "GCM_INTERACTIVE": "Never",  
                 "GIT_PAGER": "cat",          
                 "LC_ALL": "C",
+                "GIT_OPTIONAL_LOCKS": "0",
+
             }
         )
 
