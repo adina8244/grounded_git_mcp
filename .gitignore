@@ -6,5 +6,8 @@ dist/
 wheels/
 *.egg-info
 
+
+.grounded_git_mcp/
+
 # Virtual environments
 .venv
