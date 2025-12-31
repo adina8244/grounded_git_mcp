@@ -13,3 +13,9 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 [project.scripts]
 grounded-git-mcp = "grounded_git_mcp.server:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = "-q"
