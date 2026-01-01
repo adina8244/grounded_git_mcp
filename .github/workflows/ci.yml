@@ -26,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --all-extras --dev
-        # פקודת הגיבוי למקרה ש-pytest לא ב-toml:
+        # זו שורת הקסם שתפתור את ה-Failed to spawn:
         uv pip install pytest 
 
     - name: Run tests
