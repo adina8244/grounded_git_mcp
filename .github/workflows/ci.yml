@@ -12,23 +12,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        enable-cache: true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Set up Python
+        run: uv python install 3.12
 
-    - name: Install dependencies
-      run: |
-        uv sync --all-extras --dev
-        # זו שורת הקסם שתפתור את ה-Failed to spawn:
-        uv pip install pytest 
+      - name: Install dependencies (locked if uv.lock exists)
+        run: uv sync --all-extras --dev
 
-    - name: Run tests
-      run: |
-        uv run pytest -q
+      - name: Run tests
+        run: uv run pytest -q
