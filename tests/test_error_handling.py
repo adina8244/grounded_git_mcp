@@ -61,17 +61,41 @@ def test_git_binary_not_found_raises_gitexecutionerror(tmp_git_repo: Path):
             runner.run(["status"])
 
 
-def test_git_command_timeout_handling(tmp_git_repo: Path):
-    config = GitRunnerConfig(timeout_s=0.001)  # extremely small
+def test_git_command_timeout_handling(tmp_git_repo: Path, monkeypatch):
+    class FakePopen:
+        def __init__(self, *args, **kwargs):
+            self.pid = 12345
+            self.returncode = None
+            self._calls = 0
+
+        def communicate(self, timeout=None):
+            self._calls += 1
+            if self._calls == 1:
+                raise subprocess.TimeoutExpired(cmd="git log --all", timeout=timeout)
+            return ("", "")
+
+        def wait(self, timeout=None):
+            self.returncode = 0
+            return 0
+
+        def kill(self):
+            self.returncode = -9
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+
+    import grounded_git_mcp.core.git_runner as gr
+    monkeypatch.setattr(gr, "_kill_process_tree_windows", lambda pid: None)
+
+    config = GitRunnerConfig(timeout_s=0.001)
     runner = SafeGitRunner(tmp_git_repo, config=config)
 
     res = runner.run(["log", "--all"])
     assert res.timed_out is True
-    assert res.exit_code != 0  # don't assume 124 specifically
+    assert res.exit_code == 124
+
 
 
 def test_git_runner_output_truncation_with_large_output(tmp_git_repo: Path):
-    # must be committed to exist in HEAD:<path>
     _commit_file(tmp_git_repo, "large.txt", "x" * 100_000, "add large")
 
     config = GitRunnerConfig(max_output_chars=1000)
