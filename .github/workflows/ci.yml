@@ -1,3 +1,34 @@
+# name: Python CI
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - uses: actions/checkout@v4
+
+#     - name: Install uv
+#       uses: astral-sh/setup-uv@v3
+#       with:
+#         enable-cache: true
+
+#     - name: Set up Python
+#       run: uv python install 3.11
+
+#     - name: Install dependencies
+#       run: |
+#         uv sync 
+
+#     - name: Run tests
+#       run: |
+#         uv run pytest -q
+
 name: Python CI
 
 on:
@@ -5,13 +36,16 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  # מאפשר לך להריץ את הטסטים ידנית דרך הטאב Actions ב-GitHub
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Install uv
       uses: astral-sh/setup-uv@v3
@@ -22,9 +56,11 @@ jobs:
       run: uv python install 3.11
 
     - name: Install dependencies
+      # הדגל --dev קריטי כאן כדי ש-uv יתקין את pytest בתוך הסביבה ב-GitHub
       run: |
-        uv sync 
+        uv sync --all-extras --dev
 
     - name: Run tests
+      # uv run מוודא שהפקודה רצה בתוך הסביבה הווירטואלית שנוצרה בצעד הקודם
       run: |
         uv run pytest -q
