@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..core.git_runner import SafeGitRunner, require_ok
 from ..core.limits import MAX_LINES_TEXT
-from ..core.paths import resolve_root, normalize_relpath
+from ..core.security import resolve_root, normalize_relpath
 
 
 def read_file_at_ref(root: str = ".", ref: str = "HEAD", path: str = "") -> dict:

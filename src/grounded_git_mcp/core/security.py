@@ -6,9 +6,7 @@ from .errors import InvalidRootError
 
 
 def resolve_root(root: str | Path) -> Path:
-    """
-    Resolve and validate root directory for local-repo operations.
-    """
+    """Resolve and validate root directory for local-repo operations."""
     p = Path(root).expanduser().resolve()
 
     if not p.exists():
@@ -18,6 +16,13 @@ def resolve_root(root: str | Path) -> Path:
 
     return p
 
+
+def normalize_relpath(path: str) -> str:
+    """Normalize a user-provided relative path to a safe, consistent form."""
+    s = (path or "").strip().replace("\\", "/")
+    while s.startswith("./"):
+        s = s[2:]
+    return s
 
 def ensure_within_root(root: Path, target: Path) -> Path:
     """
@@ -33,3 +38,8 @@ def ensure_within_root(root: Path, target: Path) -> Path:
         raise InvalidRootError(f"Path escapes root. root={root} target={target}") from e
 
     return target
+
+
+
+
+

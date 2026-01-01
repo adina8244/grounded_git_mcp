@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..core.git_runner import SafeGitRunner, require_ok
 from ..core.limits import MAX_LINES_TEXT
-from ..core.paths import resolve_root, normalize_relpath
+from ..core.security import resolve_root, normalize_relpath
 
 
 def diff_range(
@@ -20,7 +20,7 @@ def diff_range(
     """
     runner = SafeGitRunner(root)
 
-    repo_root = resolve_root(root)
+    repo_root = (root)
     rng = f"{base}{'...' if triple_dot else '..'}{head}"
 
     args = ["diff", "--patch", "--no-color", rng]

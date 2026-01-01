@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..core.limits import MAX_TREE_ENTRIES
-from ..core.paths import resolve_root
+from ..core.security import resolve_root
+
 from ..core.git_runner import SafeGitRunner, require_ok
 
 

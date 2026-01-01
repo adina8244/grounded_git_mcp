@@ -97,11 +97,11 @@ def propose_git_command(
         read_only=True,
     )
 
-    cid = new_confirmation_id(root_path, args)
+    ConfirmationID = new_confirmation_id(root_path, args)
     now = int(time.time())
 
-    c = Confirmation(
-        confirmation_id=cid,
+    pending_confirmation = Confirmation(
+        confirmation_id=ConfirmationID,
         root=str(root_path),
         args=args,
         classification=classification,
@@ -117,21 +117,21 @@ def propose_git_command(
             require_no_conflicts=True,
         ),
     )
-    store.put(c)
+    store.put(pending_confirmation)
 
     return {
         "summary": "Proposal created. Requires explicit confirmation to execute.",
-        "confirmation_id": cid,
+        "confirmation_id": ConfirmationID,
         "classification": classification,
         "args": args,
-        "expires_at": c.expires_at,
+        "expires_at": pending_confirmation.expires_at,
         "preconditions": {
-            "expected_head": c.preconditions.expected_head,
-            "expected_branch": c.preconditions.expected_branch,
-            "require_clean": c.preconditions.require_clean,
-            "require_no_conflicts": c.preconditions.require_no_conflicts,
+            "expected_head": pending_confirmation.preconditions.expected_head,
+            "expected_branch": pending_confirmation.preconditions.expected_branch,
+            "require_clean": pending_confirmation.preconditions.require_clean,
+            "require_no_conflicts": pending_confirmation.preconditions.require_no_conflicts,
         },
-        "prompt_to_confirm": f"I CONFIRM {cid}",
+        "prompt_to_confirm": f"I CONFIRM {ConfirmationID}",
         "notes": [
             "Token is one-time and expires automatically.",
             "Execution fails if HEAD/branch changed or conflicts exist (per preconditions).",
@@ -152,26 +152,26 @@ def execute_confirmed(
     runner = SafeGitRunner(root_path) 
     store = FileConfirmationStore(root_path)
 
-    c = store.get(confirmation_id)
-    _require_ok(c is not None, "Unknown confirmation_id.")
-    _require_ok(c.root == str(root_path), "Token repo_root mismatch.")
-    _require_ok(c.can_use(), "Token expired or already used.")
+    confirmation = store.get(confirmation_id)
+    _require_ok(confirmation is not None, "Unknown confirmation_id.")
+    _require_ok(confirmation.root == str(root_path), "Token repo_root mismatch.")
+    _require_ok(confirmation.can_use(), "Token expired or already used.")
 
     expected_phrase = f"I CONFIRM {confirmation_id}"
     _require_ok(user_confirmation.strip() == expected_phrase, f"Invalid confirmation phrase. Use: {expected_phrase}")
 
-    _require_ok(command_hash(c.args) == c.cmd_hash, "Command hash mismatch (tampering detected).")
+    _require_ok(command_hash(confirmation.args) == confirmation.cmd_hash, "Command hash mismatch (tampering detected).")
 
-    _check_preconditions(runner, c.preconditions)
+    _check_preconditions(runner, confirmation.preconditions)
 
-    res = runner.run(c.args, read_only=False)
+    res = runner.run(confirmation.args, read_only=False)
     require_ok(res, context="execute_confirmed(run)")
 
     result = {
         "summary": "Executed confirmed git command.",
         "confirmation_id": confirmation_id,
-        "classification": c.classification,
-        "args": c.args,
+        "classification": confirmation.classification,
+        "args": confirmation.args,
         "output": {
             "stdout": res.stdout,
             "stderr": res.stderr,
@@ -181,5 +181,5 @@ def execute_confirmed(
             "output_truncated": res.output_truncated,
         },
     }
-    store.mark_used(c, result=result)
+    store.mark_used(confirmation, result=result)
     return result

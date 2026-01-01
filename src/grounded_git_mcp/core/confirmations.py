@@ -17,7 +17,6 @@ def _sha256_text(s: str) -> str:
 
 
 def _stable_cmd_text(args: list[str]) -> str:
-    # stable string for hashing (avoid shell string injection ambiguity)
     return "\n".join(args)
 
 

@@ -14,16 +14,15 @@ class Classification:
     reason: str
 
 
-# Tight denylist for safety (feel free to expand)
 _DENY = {
     "reset",
     "clean",
     "rebase",
     "commit-tree",
     "update-ref",
-    "push",        # network + can rewrite remote history if forced
-    "fetch",       # network
-    "gc",          # can mutate repo internals
+    "push",       
+    "fetch",      
+    "gc",         
 }
 
 
@@ -48,9 +47,7 @@ def classify_git_args(args: list[str]) -> dict:
         return asdict(Classification(kind="network", risk="high", reason=f"Network subcommand: {sub}"))
 
     if sub in _WRITE:
-        # “merge” can be messy but still acceptable with preconditions
         risk: Risk = "medium" if sub in {"add", "rm", "mv", "tag", "branch", "stash"} else "high"
         return asdict(Classification(kind="write", risk=risk, reason=f"Write subcommand: {sub}"))
 
-    # default: treat as read-ish but cautious
     return asdict(Classification(kind="read", risk="low", reason=f"Assumed read-only: {sub}"))

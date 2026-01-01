@@ -58,25 +58,6 @@ def blame_tool(file_path: str, root: str = ".", start_line: int = 1, end_line: i
 def detect_conflicts_tool(root: str = ".") -> dict:
     return detect_conflicts(root=root)
 
-@mcp.tool()
-def repo_tree_resource(root: str = ".", ref: str = "HEAD") -> dict:
-    return repo_tree(root=root, ref=ref)
-
-
-@mcp.tool()
-def read_file_resource(root: str = ".", ref: str = "HEAD", path: str = "") -> dict:
-    return read_file_at_ref(root=root, ref=ref, path=path)
-
-
-@mcp.tool()
-def diff_range_resource(
-    root: str = ".",
-    base: str = "HEAD~1",
-    head: str = "HEAD",
-    triple_dot: bool = False,
-    pathspec: list[str] | None = None,
-) -> dict:
-    return diff_range(root=root, base=base, head=head, triple_dot=triple_dot, pathspec=pathspec)
 
 @mcp.tool()
 def propose_git_command_tool(
@@ -92,7 +73,24 @@ def propose_git_command_tool(
 def execute_confirmed_tool(root: str = ".", confirmation_id: str = "", user_confirmation: str = "") -> dict:
     return execute_confirmed(root=root, confirmation_id=confirmation_id, user_confirmation=user_confirmation)
 
+# resource:
 
+@mcp.resource("repo://{root}/{ref}/tree")
+def repo_tree_resource(root: str = ".", ref: str = "HEAD") -> dict:
+    return repo_tree(root=root, ref=ref)
+
+@mcp.resource("repo://{root}/{ref}/file/{path}")
+def read_file_resource(root: str = ".", ref: str = "HEAD", path: str = "") -> dict:
+    return read_file_at_ref(root=root, ref=ref, path=path)
+
+@mcp.resource("repo://{root}/diff?base={base}&head={head}&triple_dot={triple_dot}")
+def diff_range_resource(
+    root: str = ".",
+    base: str = "HEAD~1",
+    head: str = "HEAD",
+    triple_dot: bool = False,
+) -> dict:
+    return diff_range(root=root, base=base, head=head, triple_dot=triple_dot, pathspec=None)
 
 def main() -> None:
     mcp.run()
