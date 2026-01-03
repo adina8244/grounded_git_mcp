@@ -96,17 +96,6 @@ The primary threats considered in this project are:
 
 ---
 
-## Vulnerability Reporting
-
-If you discover a security vulnerability or unsafe behavior:
-
-- Please open a **GitHub Issue** with the label `security`
-- Do **not** publish exploit details publicly before discussion
-
-Responsible disclosure is appreciated.
-
----
-
 ## Design Philosophy
 
 Security in this project is **enforced by code**, not by prompts or conventions.
